@@ -21,7 +21,7 @@ export function Login() {
     setLoading(true);
 
     try {
-      const response = await api.post('api/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
       toast.success('Login realizado com sucesso!'); // Exibe uma mensagem de sucesso para o usuário
       const { token } = response.data;
       login(token); // Armazena o token no localStorage
