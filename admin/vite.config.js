@@ -7,4 +7,10 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  preview: {
+    allowedHosts: [
+      'central-jovem-production-741e.up.railway.app',
+      'localhost',
+    ],
+  }
 })
