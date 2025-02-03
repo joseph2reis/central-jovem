@@ -1,21 +1,54 @@
-import { useState, useEffect } from 'react';
-import { FaEdit, FaTrash, FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
-import api from '../service/api'; // Importe a instância do axios
+import React, { useState, useEffect, useRef } from 'react';
+import { FaEdit, FaTrash, FaSearch, FaMapMarkerAlt, FaDownload } from 'react-icons/fa';
+import { FaRegFilePdf } from "react-icons/fa6";
+import api from '../service/api';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import html2pdf from 'html2pdf.js'; // Importe a biblioteca
 
 function Membros() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showEndereco, setShowEndereco] = useState(null);
-  const [membros, setMembros] = useState([]); // Estado para armazenar os membros
-  const [loading, setLoading] = useState(true); // Estado para controlar o carregamento
-  const [modalExclusao, setModalExclusao] = useState({ aberto: false, membroId: null }); // Estado para controlar o modal de exclusão
+  const [membros, setMembros] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalExclusao, setModalExclusao] = useState({ aberto: false, membroId: null });
+  const [fichaMembroId, setFichaMembroId] = useState(null);
+  const fichaRef = useRef(null);
   const navigate = useNavigate();
+
+  // Função para gerar PDF
+  const handleDownloadPDF = () => {
+    const element = fichaRef.current;
+    const options = {
+      margin: 10,
+      filename: 'ficha_cadastro.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    };
+    html2pdf().from(element).set(options).save();
+  };
+
+
+  // Função para exibir a ficha de um membro
+  const handleExibirFicha = (id) => {
+    setFichaMembroId(id);
+    if (fichaRef.current) {
+      fichaRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Função para fechar a ficha
+  const handleFecharFicha = () => {
+    setFichaMembroId(null);
+  };
+
 
   const handleEditarMembro = (id) => {
     navigate(`/dashboard/editar/${id}`); // Redireciona para a página de edição
   };
+
 
   const handleAbrirModalExclusao = (id) => {
     setModalExclusao({ aberto: true, membroId: id }); // Abre o modal e define o ID do membro a ser excluído
@@ -39,6 +72,10 @@ function Membros() {
       }
     }
   };
+
+  function capitalizarNomes(nome) {
+    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+  }
 
   // Busca os membros ao carregar o componente
   useEffect(() => {
@@ -64,9 +101,6 @@ function Membros() {
     fetchMembros();
   }, []);
 
-  function capitalizarNomes(nome) {
-    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
-  }
 
   // Filtra os membros com base no termo de busca
   const filteredMembros = membros.filter((membro) =>
@@ -83,7 +117,6 @@ function Membros() {
       <div className="p-4 sm:p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Membros Cadastrados</h2>
-
           <div className="w-full sm:w-auto relative">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -126,9 +159,9 @@ function Membros() {
                 </th>
               </tr>
             </thead>
-            {filteredMembros.map((membro) => (
-              <tbody key={membro._id} className="bg-white divide-y divide-gray-200">
-                <>
+            <tbody>
+              {filteredMembros.map((membro) => (
+                <React.Fragment key={membro._id}>
                   <tr className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex flex-col sm:hidden mb-2">
@@ -147,7 +180,7 @@ function Membros() {
                           )}
                         </div>
                       </div>
-                      <span className="hidden sm:inline text-sm font-medium text-gray-900">{membro.nome}</span>
+                      <span className="hidden sm:inline text-sm font-medium text-gray-900">{capitalizarNomes(membro.nome)}</span>
                     </td>
                     <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {membro.telefone}
@@ -175,18 +208,24 @@ function Membros() {
                         <FaMapMarkerAlt className="text-lg" />
                       </button>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium ">
                       <button
-                        className="text-blue-600 hover:text-blue-800 mr-4 transition-colors"
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
                         onClick={() => handleEditarMembro(membro._id)}
                       >
                         <FaEdit className="text-lg" />
                       </button>
                       <button
-                        className="text-red-600 hover:text-red-800 transition-colors"
+                        className="text-red-600 hover:text-red-800 mx-2 transition-colors"
                         onClick={() => handleAbrirModalExclusao(membro._id)}
                       >
                         <FaTrash className="text-lg" />
+                      </button>
+                      <button
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        onClick={() => handleExibirFicha(membro._id)}
+                      >
+                        <FaRegFilePdf className="text-lg" />
                       </button>
                     </td>
                   </tr>
@@ -205,13 +244,141 @@ function Membros() {
                       </td>
                     </tr>
                   )}
-                </>
-              </tbody>
-            ))}
+                </React.Fragment>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>
 
+      {/* Modal da Ficha */}
+      {fichaMembroId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={fichaRef} className="bg-white rounded-lg shadow-md w-full max-w-2xl h-[90vh] overflow-y-auto p-8">
+            {/* Cabeçalho com Foto e Dados Pessoais */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 border-b border-gray-200 pb-6">
+              <div className="w-32 h-40 bg-gray-200 border border-gray-300 rounded-lg flex items-center justify-center">
+                <span className="text-gray-500 text-sm">Foto 3x4</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Ficha de Cadastro</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {membros
+                    .filter((membro) => membro._id === fichaMembroId)
+                    .map((membro) => (
+                      <React.Fragment key={membro._id}>
+                        <div key="nome">
+                          <label className="block text-sm font-medium text-gray-500">Nome Completo</label>
+                          <p className="mt-1 text-sm text-gray-900 font-semibold">{capitalizarNomes(membro.nome)}</p>
+                        </div>
+                        <div key="email">
+                          <label className="block text-sm font-medium text-gray-500">Email</label>
+                          <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.email}</p>
+                        </div>
+                        <div key="telefone">
+                          <label className="block text-sm font-medium text-gray-500">Telefone</label>
+                          <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.telefone}</p>
+                        </div>
+                        <div key="dataNascimento">
+                          <label className="block text-sm font-medium text-gray-500">Data de Nascimento</label>
+                          <p className="mt-1 text-sm text-gray-900 font-semibold">{new Date(membro.dataNascimento).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Informações Adicionais */}
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-gray-700 mb-4">Informações Adicionais</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {membros
+                  .filter((membro) => membro._id === fichaMembroId)
+                  .map((membro) => (
+                    <React.Fragment key="informacoesAdicionais">
+                      <div key="projeto" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Projeto</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.projeto}</p>
+                      </div>
+                      <div key="tipoMembro" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Tipo de Membro</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.tipoMembro}</p>
+                      </div>
+                      <div key="batizado" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Batizado</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.batizado ? 'Sim' : 'Não'}</p>
+                      </div>
+                      {membro.batizado && (
+                        <div key="dataBatismo" className="bg-gray-50 p-4 rounded-lg">
+                          <label className="block text-sm font-medium text-gray-500">Data de Batismo</label>
+                          <p className="mt-1 text-sm text-gray-900 font-semibold">{new Date(membro.dataBatismo).toLocaleDateString('pt-br')}</p>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+              </div>
+            </div>
+
+            {/* Endereço */}
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-gray-700 mb-4">Endereço</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {membros
+                  .filter((membro) => membro._id === fichaMembroId)
+                  .map((membro) => (
+                    <React.Fragment key={membro._id}>
+                      <div key="cep" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">CEP</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.cep}</p>
+                      </div>
+                      <div key="rua" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Rua</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.rua}</p>
+                      </div>
+                      <div key="numero" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Número</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.numero}</p>
+                      </div>
+                      <div key="complemento" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Complemento</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.complemento || 'N/A'}</p>
+                      </div>
+                      <div key="bairro" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Bairro</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.bairro}</p>
+                      </div>
+                      <div key="cidade" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Cidade</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.cidade}</p>
+                      </div>
+                      <div key="estado" className="bg-gray-50 p-4 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-500">Estado</label>
+                        <p className="mt-1 text-sm text-gray-900 font-semibold">{membro.endereco.estado}</p>
+                      </div>
+                    </React.Fragment>
+                  ))}
+              </div>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="mt-8 flex justify-end gap-4">
+              <button
+                onClick={handleFecharFicha}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Fechar Ficha
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <FaDownload /> Baixar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Modal de Exclusão */}
       {modalExclusao.aberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

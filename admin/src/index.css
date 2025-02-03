@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+@media print {
+    body * {
+        visibility: hidden;
+        /* Oculta tudo na página */
+    }
+
+    .modal-impressao,
+    .modal-impressao * {
+        visibility: visible;
+        /* Exibe apenas o modal */
+    }
+
+    .modal-impressao {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+
+    .no-print {
+        display: none;
+        /* Oculta elementos que não devem ser impressos */
+    }
+}

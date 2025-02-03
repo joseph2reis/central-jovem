@@ -4,35 +4,34 @@ export const salvarPresencas = async (req, res) => {
     try {
         const presencas = req.body;
 
-        // Para cada presença, verifique se já existe um registro e atualize ou crie um novo
         for (const presenca of presencas) {
             const { idMembro, nomeMembro, data, presente } = presenca;
 
-            // Normaliza a data para o início do dia
             const dataNormalizada = new Date(data);
             dataNormalizada.setHours(0, 0, 0, 0);
 
-            // Verifica se já existe um registro para o membro na data especificada
             const registroExistente = await PresencaModel.findOne({
                 idMembro,
                 'presencas.data': { $gte: dataNormalizada, $lt: new Date(dataNormalizada.getTime() + 24 * 60 * 60 * 1000) },
             });
 
             if (registroExistente) {
-                // Atualiza a presença existente
+                // Atualiza a presença existente corretamente
                 await PresencaModel.updateOne(
                     {
-                        idMembro, 'presencas.data': { $gte: dataNormalizada, $lt: new Date(dataNormalizada.getTime() + 24 * 60 * 60 * 1000) },
-                        nomeMembro,
+                        idMembro,
+                        'presencas.data': { $gte: dataNormalizada, $lt: new Date(dataNormalizada.getTime() + 24 * 60 * 60 * 1000) },
                     },
                     { $set: { 'presencas.$.presente': presente } }
                 );
             } else {
-                // Cria um novo registro de presença
+                // Adiciona um novo registro corretamente
                 await PresencaModel.updateOne(
                     { idMembro },
-                    { nomeMembro },
-                    { $push: { presencas: { data: dataNormalizada, presente } } },
+                    {
+                        $set: { nomeMembro },
+                        $push: { presencas: { data: dataNormalizada, presente } },
+                    },
                     { upsert: true }
                 );
             }
@@ -44,6 +43,7 @@ export const salvarPresencas = async (req, res) => {
         res.status(500).json({ message: 'Erro ao salvar presenças.' });
     }
 };
+
 
 export const buscarPresencasDoDia = async (req, res) => {
     try {

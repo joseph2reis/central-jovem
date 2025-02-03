@@ -40,7 +40,7 @@ export const buscarMembroPorId = async (req, res) => {
       return res.status(404).json({ message: 'Membro não encontrado' });
     }
 
-    res.status(200).json({ message: 'Membro encontrado com sucesso', membro });
+    res.status(200).json(membro);
   } catch (err) {
     res.status(500).json({ message: 'Erro ao buscar membro', error: err.message });
   }

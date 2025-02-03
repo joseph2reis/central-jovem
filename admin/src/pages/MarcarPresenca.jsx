@@ -10,7 +10,9 @@ function MarcarPresenca() {
   const [diaAtual, setDiaAtual] = useState('');
   const [filtroJovem, setFiltroJovem] = useState('todos'); // Estado para o filtro
 
-  console.log(membros);
+  function capitalizarNomes(nome) {
+    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+  }
 
   useEffect(() => {
     const fetchMembrosEPresencas = async () => {
@@ -31,15 +33,26 @@ function MarcarPresenca() {
 
         // Atualiza o estado dos membros com base nas presenças do dia
         const membrosAtualizados = dadosMembros.map((membro) => {
-          const presencaMembro = presencasDoDia.find((p) => {
-            const dataPresenca = new Date(p.presencas[0].data);
-            dataPresenca.setHours(0, 0, 0, 0);
-            return p.idMembro === membro._id && dataPresenca.getTime() === hoje.getTime();
-          });
+          const presencaMembro = presencasDoDia.find((p) =>
+            p.idMembro === membro._id &&
+            p.presencas.some((presenca) => {
+              const dataPresenca = new Date(presenca.data);
+              dataPresenca.setHours(0, 0, 0, 0);
+              return dataPresenca.getTime() === hoje.getTime();
+            })
+          );
+
           return {
             ...membro,
-            presente: presencaMembro ? presencaMembro.presencas[0].presente : false,
+            presente: presencaMembro
+              ? presencaMembro.presencas.find((p) => {
+                const dataPresenca = new Date(p.data);
+                dataPresenca.setHours(0, 0, 0, 0);
+                return dataPresenca.getTime() === hoje.getTime();
+              })?.presente || false
+              : false,
           };
+
         });
 
 
@@ -137,7 +150,7 @@ function MarcarPresenca() {
                 key={membro._id}
                 className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
               >
-                <span>{membro.nome}</span>
+                <span>{capitalizarNomes(membro.nome)}</span>
                 <button
                   onClick={() => marcarPresenca(membro._id)}
                   className="px-4 py-2 rounded flex items-center gap-2 bg-green-100 text-green-800 hover:bg-green-200"
@@ -162,7 +175,7 @@ function MarcarPresenca() {
                 key={membro._id}
                 className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
               >
-                <span>{membro.nome}</span>
+                <span>{capitalizarNomes(membro.nome)}</span>
                 <button
                   onClick={() => marcarPresenca(membro._id)}
                   className="px-4 py-2 rounded flex items-center gap-2 bg-red-100 text-red-800 hover:bg-red-200"

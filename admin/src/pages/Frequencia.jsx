@@ -14,6 +14,10 @@ function Frequencia() {
   const [loading, setLoading] = useState(true); // Estado para controlar o carregamento
   const [error, setError] = useState(null); // Estado para armazenar erros
 
+  function capitalizarNomes(nome) {
+    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+  }
+
   // Busca as frequências ao carregar o componente
   useEffect(() => {
     const fetchFrequencias = async () => {
@@ -241,7 +245,7 @@ function Frequencia() {
                 return (
                   <tr key={membro.id} className="hover:bg-gray-50">
                     <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {membro.nome}
+                      {capitalizarNomes(membro.nome)}
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                       {membro.projeto}
