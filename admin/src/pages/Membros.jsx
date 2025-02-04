@@ -1,21 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { FaEdit, FaTrash, FaSearch, FaMapMarkerAlt, FaDownload } from 'react-icons/fa';
 import { FaRegFilePdf } from "react-icons/fa6";
 import api from '../service/api';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import html2pdf from 'html2pdf.js'; // Importe a biblioteca
+import html2pdf from 'html2pdf.js';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 function Membros() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showEndereco, setShowEndereco] = useState(null);
-  const [membros, setMembros] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [modalExclusao, setModalExclusao] = useState({ aberto: false, membroId: null });
   const [fichaMembroId, setFichaMembroId] = useState(null);
   const fichaRef = useRef(null);
   const navigate = useNavigate();
+
+  const queryClient = useQueryClient();
+
+  // Função para buscar os membros
+  const fetchMembros = async () => {
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    const response = await api.get('/membros'); // Faz a requisição ao backend
+    if (response.status !== 200) {
+      throw new Error('Erro ao buscar membros');
+    }
+    return response.data;
+  };
+
+  // Usa o React Query para buscar os membros
+  const { data: membros, isLoading, isError, error } = useQuery({
+    queryKey: ['membros'], // Query Key única para esta requisição
+    queryFn: fetchMembros, // Função que faz a requisição
+    staleTime: 1000 * 60 * 5, // Dados ficam "frescos" por 5 minutos
+    select: (data) => data.sort((a, b) => a.nome.localeCompare(b.nome)), // Ordena os membros por nome
+
+  });
 
   // Função para gerar PDF
   const handleDownloadPDF = () => {
@@ -30,7 +50,6 @@ function Membros() {
     html2pdf().from(element).set(options).save();
   };
 
-
   // Função para exibir a ficha de um membro
   const handleExibirFicha = (id) => {
     setFichaMembroId(id);
@@ -44,71 +63,61 @@ function Membros() {
     setFichaMembroId(null);
   };
 
-
+  // Função para editar um membro
   const handleEditarMembro = (id) => {
-    navigate(`/dashboard/editar/${id}`); // Redireciona para a página de edição
+    navigate(`/dashboard/editar/${id}`);
   };
 
-
+  // Função para abrir o modal de exclusão
   const handleAbrirModalExclusao = (id) => {
-    setModalExclusao({ aberto: true, membroId: id }); // Abre o modal e define o ID do membro a ser excluído
+    setModalExclusao({ aberto: true, membroId: id });
   };
 
+  // Função para fechar o modal de exclusão
   const handleFecharModalExclusao = () => {
-    setModalExclusao({ aberto: false, membroId: null }); // Fecha o modal
+    setModalExclusao({ aberto: false, membroId: null });
   };
 
+  // Função para excluir um membro
   const handleExcluirMembro = async () => {
     if (modalExclusao.membroId) {
       try {
-        await api.delete(`/membros/${modalExclusao.membroId}`); // Faz a requisição para excluir
-        setMembros(membros.filter((membro) => membro._id !== modalExclusao.membroId)); // Atualiza a lista de membros
-        toast.success('Membro excluído com sucesso!'); // Exibe uma mensagem de sucesso
+        await api.delete(`/membros/${modalExclusao.membroId}`);
+        toast.success('Membro excluído com sucesso!');
+        // Invalida a query para refazer a requisição e atualizar a lista
+        queryClient.invalidateQueries({ queryKey: ['membros'] });
       } catch (error) {
         console.error('Erro ao excluir membro:', error);
-        toast.error('Erro ao excluir membro. Tente novamente mais tarde.'); // Exibe uma mensagem de erro
+        toast.error('Erro ao excluir membro. Tente novamente mais tarde.');
       } finally {
-        handleFecharModalExclusao(); // Fecha o modal após a exclusão
+        handleFecharModalExclusao();
       }
     }
   };
 
+  // Função para capitalizar nomes
   function capitalizarNomes(nome) {
-    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+    return nome
+      .split(' ') // Divide o nome em palavras
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()) // Capitaliza apenas a primeira letra
+      .join(' '); // Junta tudo de volta
   }
 
-  // Busca os membros ao carregar o componente
-  useEffect(() => {
-    const fetchMembros = async () => {
-      try {
-        const response = await api.get('/membros'); // Faz a requisição ao backend
-
-        // Verifica se a resposta é um array
-        if (Array.isArray(response.data)) {
-          setMembros(response.data); // Atualiza o estado com os dados recebidos
-        } else {
-          console.error('A resposta da API não é um array:', response.data);
-          setMembros([]); // Define o estado como array vazio em caso de erro
-        }
-      } catch (error) {
-        console.error('Erro ao buscar membros:', error);
-        setMembros([]); // Define o estado como array vazio em caso de erro
-      } finally {
-        setLoading(false); // Finaliza o carregamento
-      }
-    };
-
-    fetchMembros();
-  }, []);
-
-
   // Filtra os membros com base no termo de busca
-  const filteredMembros = membros.filter((membro) =>
-    membro.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMembros = membros
+    ? membros.filter((membro) =>
+      membro.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    : [];
 
-  if (loading) {
-    return <div className="text-center py-8">Carregando...</div>; // Exibe um indicador de carregamento
+  // Exibe um indicador de carregamento
+  if (isLoading) {
+    return <div className="text-center py-8">Carregando...</div>;
+  }
+
+  // Exibe uma mensagem de erro
+  if (isError) {
+    return <div className="text-center py-8">Erro: {error.message}</div>;
   }
 
   return (

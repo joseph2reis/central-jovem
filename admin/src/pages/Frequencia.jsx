@@ -14,8 +14,12 @@ function Frequencia() {
   const [loading, setLoading] = useState(true); // Estado para controlar o carregamento
   const [error, setError] = useState(null); // Estado para armazenar erros
 
+  // Função para capitalizar nomes
   function capitalizarNomes(nome) {
-    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+    return nome
+      .split(' ') // Divide o nome em palavras
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()) // Capitaliza apenas a primeira letra
+      .join(' '); // Junta tudo de volta
   }
 
   // Busca as frequências ao carregar o componente
@@ -23,13 +27,11 @@ function Frequencia() {
     const fetchFrequencias = async () => {
       try {
         const response = await api.get('/presencas');
-        console.log('Dados brutos do backend:', response.data); // Adicione este console.log
 
         const formattedData = response.data.map((presenca) => {
           const presencasPorDia = {};
           presenca.presencas.forEach((p) => {
             const diaSemana = new Date(p.data).toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
-            console.log('Dia da semana:', diaSemana, 'Presente:', p.presente); // Adicione este console.log
             presencasPorDia[diaSemana] = p.presente;
           });
 
@@ -55,11 +57,11 @@ function Frequencia() {
 
   const diasSemana = [
     'domingo',
-    'segunda',
-    'terça',
-    'quarta',
-    'quinta',
-    'sexta',
+    'segunda-feira',
+    'terça-feira',
+    'quarta-feira',
+    'quinta-feira',
+    'sexta-feira',
     'sábado'
   ];
 
@@ -179,21 +181,16 @@ function Frequencia() {
                   Projeto
                 </label>
                 <select
-                  name="projeto"
+                  name="membro"
                   value={filters.projeto}
                   onChange={handleFilterChange}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos</option>
-                  <option value="arcanjo">Arcanjo</option>
-                  <option value="assistente">Assistente</option>
-                  <option value="atalaia">Atalaia</option>
-                  <option value="cultura">Cultura</option>
-                  <option value="esporte">Esporte</option>
-                  <option value="helpe">Helpe</option>
-                  <option value="midia">Mídia</option>
-                  <option value="uniforca">Uniforça</option>
-                  <option value="nenhum">Nenhum Projeto</option>
+                  <option value="obreiro">Obreiros</option>
+                  <option value="jovem">Jovens</option>
+                  <option value="discipulo">Discípulos</option>
+
                 </select>
               </div>
 
@@ -225,9 +222,7 @@ function Frequencia() {
                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nome
                 </th>
-                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Projeto
-                </th>
+
                 {diasSemana.map(dia => (
                   <th key={dia} scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {dia.slice(0, 3)}
@@ -247,9 +242,7 @@ function Frequencia() {
                     <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {capitalizarNomes(membro.nome)}
                     </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membro.projeto}
-                    </td>
+
                     {diasSemana.map(dia => {
                       const status = getPresencaStatus(membro.presencas[dia]);
                       return (

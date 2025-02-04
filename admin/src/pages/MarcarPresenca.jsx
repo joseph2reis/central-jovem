@@ -1,124 +1,120 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../service/api';
 
 function MarcarPresenca() {
-  // Estado para armazenar a lista de membros e suas presenças
-  const [membros, setMembros] = useState([]);
-  const [diaAtual, setDiaAtual] = useState('');
-  const [filtroJovem, setFiltroJovem] = useState('todos'); // Estado para o filtro
+  const [filtroJovem, setFiltroJovem] = useState('todos');
+  const queryClient = useQueryClient();
 
+  // Função para buscar membros e presenças
+  const fetchMembrosEPresencas = async () => {
+    const [responseMembros, responsePresencas] = await Promise.all([
+      api.get('/membros'),
+      api.get('/presencas/hoje'),
+    ]);
+
+    const dadosMembros = responseMembros.data;
+    const presencasDoDia = responsePresencas.data;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    return dadosMembros.map((membro) => {
+      const presencaMembro = presencasDoDia.find((p) =>
+        p.idMembro === membro._id &&
+        p.presencas.some((presenca) => {
+          const dataPresenca = new Date(presenca.data);
+          dataPresenca.setHours(0, 0, 0, 0);
+          return dataPresenca.getTime() === hoje.getTime();
+        })
+      );
+
+      return {
+        ...membro,
+        presente: presencaMembro
+          ? presencaMembro.presencas.find((p) => {
+            const dataPresenca = new Date(p.data);
+            dataPresenca.setHours(0, 0, 0, 0);
+            return dataPresenca.getTime() === hoje.getTime();
+          })?.presente || false
+          : false,
+      };
+    });
+  };
+
+  // Usar useQuery para buscar membros e presenças
+  const { data: membros, isLoading, isError } = useQuery({
+    queryKey: ['membrosEPresencas'], // Chave da query
+    queryFn: fetchMembrosEPresencas, // Função de busca
+    onError: () => toast.error('Erro ao carregar membros e presenças.'), // Tratamento de erro
+  });
+
+  // Função para capitalizar nomes
   function capitalizarNomes(nome) {
-    return nome.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+    return nome
+      .split(' ') // Divide o nome em palavras
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()) // Capitaliza apenas a primeira letra
+      .join(' '); // Junta tudo de volta
   }
 
-  useEffect(() => {
-    const fetchMembrosEPresencas = async () => {
-      try {
-        // Busca a lista de membros
-        const responseMembros = await api.get('/membros');
-        const dadosMembros = responseMembros.data;
-
-
-        // Busca as presenças do dia atual
-        const responsePresencas = await api.get('/presencas/hoje');
-        const presencasDoDia = responsePresencas.data;
-
-
-        // Normaliza a data atual para o início do dia
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-
-        // Atualiza o estado dos membros com base nas presenças do dia
-        const membrosAtualizados = dadosMembros.map((membro) => {
-          const presencaMembro = presencasDoDia.find((p) =>
-            p.idMembro === membro._id &&
-            p.presencas.some((presenca) => {
-              const dataPresenca = new Date(presenca.data);
-              dataPresenca.setHours(0, 0, 0, 0);
-              return dataPresenca.getTime() === hoje.getTime();
-            })
-          );
-
-          return {
-            ...membro,
-            presente: presencaMembro
-              ? presencaMembro.presencas.find((p) => {
-                const dataPresenca = new Date(p.data);
-                dataPresenca.setHours(0, 0, 0, 0);
-                return dataPresenca.getTime() === hoje.getTime();
-              })?.presente || false
-              : false,
-          };
-
-        });
-
-
-        setMembros(membrosAtualizados);
-      } catch (error) {
-
-        toast.error('Erro ao carregar membros e presenças.');
-      }
-    };
-
-    fetchMembrosEPresencas();
-
-    // Definir o dia atual
-    const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    const hoje = new Date();
-    setDiaAtual(diasSemana[hoje.getDay()]);
-  }, []);
-
-
-  // Função para marcar presença
+  // Função para marcar presença localmente
   const marcarPresenca = (id) => {
-    setMembros((prevMembros) =>
-      prevMembros.map((membro) =>
-        membro._id === id ? { ...membro, presente: !membro.presente } : membro
-      )
+    const membrosAtualizados = membros.map((membro) =>
+      membro._id === id ? { ...membro, presente: !membro.presente } : membro
     );
+    queryClient.setQueryData(['membrosEPresencas'], membrosAtualizados);
     toast.success('Presença atualizada com sucesso!');
   };
 
-  // Função para salvar as presenças (pode ser integrada com o backend)
-  const salvarPresencas = async () => {
-    try {
-      // Preparar os dados para enviar ao backend
-      const presencasSalvas = membros.map((membro) => ({
-        idMembro: membro._id,
-        nomeMembro: membro.nome,
-        data: new Date(),
-        presente: membro.presente,
-      }));
-
-      // Enviar os dados para o backend
-      const response = await api.put('/presencas', presencasSalvas);
-
-      // Verificar se a requisição foi bem-sucedida
-      if (response.status === 200) {
-        toast.success('Presenças salvas com sucesso!');
-      } else {
-        toast.error('Erro ao salvar presenças.');
-      }
-    } catch (error) {
-      console.error('Erro ao salvar presenças:', error);
-      toast.error('Erro ao salvar presenças.');
-    }
+  // Função para salvar presenças no backend
+  const salvarPresencas = async (presencasSalvas) => {
+    const response = await api.put('/presencas', presencasSalvas);
+    return response.data;
   };
 
-  // Filtrar membros presentes e ausentes com base no filtro de Frente Jovem
-  const membrosFiltrados = membros.filter((membro) => {
+  // Usar useMutation para salvar presenças
+  const { mutate: salvarPresencasMutation } = useMutation({
+    mutationFn: salvarPresencas, // Função de mutação
+    onSuccess: () => {
+      toast.success('Presenças salvas com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['membrosEPresencas'] }); // Refetch dos dados
+    },
+    onError: () => toast.error('Erro ao salvar presenças.'),
+  });
+
+  // Função para preparar e enviar as presenças
+  const handleSalvarPresencas = () => {
+    const presencasSalvas = membros.map((membro) => ({
+      idMembro: membro._id,
+      nomeMembro: membro.nome,
+      data: new Date(),
+      presente: membro.presente,
+    }));
+    salvarPresencasMutation(presencasSalvas);
+  };
+
+  // Filtrar membros com base no filtro de Frente Jovem
+  const membrosFiltrados = membros?.filter((membro) => {
     if (filtroJovem === 'todos') return true;
     if (filtroJovem === 'jovem') return membro.tipoMembro === 'jovem';
     if (filtroJovem === 'obreiro') return membro.tipoMembro === 'obreiro';
     if (filtroJovem === 'discipulo') return membro.tipoMembro === 'discipulo';
     return true;
-  });
+  }) || [];
 
   const membrosPresentes = membrosFiltrados.filter((membro) => membro.presente);
   const membrosAusentes = membrosFiltrados.filter((membro) => !membro.presente);
+
+  // Definir o dia atual
+  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const hoje = new Date();
+  const diaAtual = diasSemana[hoje.getDay()];
+
+  if (isLoading) return <p>Carregando...</p>;
+  if (isError) return <p>Erro ao carregar dados.</p>;
 
   return (
     <div className="p-4">
@@ -195,7 +191,7 @@ function MarcarPresenca() {
       {/* Botão para Salvar Presenças */}
       <div className="mt-6">
         <button
-          onClick={salvarPresencas}
+          onClick={handleSalvarPresencas}
           className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           Salvar Presenças

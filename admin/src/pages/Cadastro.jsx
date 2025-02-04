@@ -6,6 +6,8 @@ import api from '../service/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InputMask from 'react-input-mask';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 
 // Esquema de validação com Yup
 const schema = yup.object().shape({
@@ -78,26 +80,39 @@ function Cadastro() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   // Observa o valor do checkbox "batizado"
   const isBatizado = watch('batizado');
 
-  const onSubmit = async (data) => {
-    setIsLoading(true);
-    try {
-      await api.post('/membros', data);
+  // 🚀 Mutação para criar um novo membro
+  const mutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/membros', data);
+      return response.data;
+    },
+    onSuccess: () => {
       toast.success('Cadastro realizado com sucesso!');
-      reset(); // Reseta o formulário após o envio
-    } catch (error) {
-      console.error('Erro ao enviar os dados:', error);
-      // Verifica se o erro é devido ao email já estar em uso
-      if (error.response && error.response.status === 400 && error.response.data.message === 'Email já está em uso') {
-        toast.error('Email já está em uso. Por favor, use outro email.');
+      queryClient.invalidateQueries(['membros']); // Atualiza a lista de membros
+      reset(); // Limpa o formulário após o sucesso
+    },
+    onError: (error) => {
+      if (error.response?.status === 400 && error.response?.data?.message === 'Email já está em uso') {
+        toast.error('Email já está em uso. Por favor, use outro.');
       }
-      toast.error('Ocorreu um erro ao enviar os dados. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
+
+      if (error.response?.status === 401) {
+        toast.error('Não autorizado, faça login novamente.');
+      }
+
+      else {
+        toast.error('Erro ao enviar os dados.');
+      }
+    },
+  });
+
+  const onSubmit = (data) => {
+    mutation.mutate(data);
   };
 
   const handleCepBlur = async (e) => {

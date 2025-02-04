@@ -1,41 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // Importe useParams
+import { useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../service/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InputMask from 'react-input-mask';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Esquema de validação com Yup
 const schema = yup.object().shape({
-    nome: yup
-        .string()
-        .transform((value) => (value ? value.toUpperCase() : value))
-        .trim()
-        .strict()
-        .required('Nome é obrigatório')
-        .min(5, 'O nome deve ter pelo menos 5 caracteres')
-        .test('tem-sobrenome', 'O nome deve conter um sobrenome', (value) => {
-            return value && value.trim().includes(' ');
-        }),
+    nome: yup.string().required('Nome é obrigatório').min(5),
     email: yup.string().email('Email inválido').required('Email é obrigatório'),
-    telefone: yup
-        .string()
-        .matches(/^\(\d{2}\) \d{5}-\d{4}$/, 'Telefone inválido')
-        .required('Telefone é obrigatório'),
+    telefone: yup.string().matches(/^\(\d{2}\) \d{5}-\d{4}$/, 'Telefone inválido').required(),
     dataNascimento: yup.string().required('Data de nascimento é obrigatória'),
     projeto: yup.string().required('Projeto é obrigatório'),
     batizado: yup.boolean(),
     dataBatismo: yup.string(),
-    tipoMembro: yup
-        .string()
-        .required('Tipo de membro é obrigatório')
-        .oneOf(['obreiro', 'jovem', 'discipulo'], 'Selecione um tipo válido'),
+    tipoMembro: yup.string().required('Tipo de membro é obrigatório'),
     endereco: yup.object().shape({
         cep: yup.string().required('CEP é obrigatório'),
-        rua: yup.string().required('Rua é obrigatória').trim(),
+        rua: yup.string().required('Rua é obrigatória'),
         numero: yup.string().required('Número é obrigatório'),
         bairro: yup.string().required('Bairro é obrigatório'),
         cidade: yup.string().required('Cidade é obrigatória'),
@@ -45,7 +32,9 @@ const schema = yup.object().shape({
 });
 
 function EditarCadastro() {
-    const { id } = useParams(); // Obtém o ID do membro da URL
+    const { id } = useParams();
+    const queryClient = useQueryClient();
+
     const {
         register,
         handleSubmit,
@@ -77,63 +66,56 @@ function EditarCadastro() {
         },
     });
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [cepLoading, setCepLoading] = useState(false);
 
-    // Observa o valor do checkbox "batizado"
     const isBatizado = watch('batizado');
+    const [cepLoading, setCepLoading] = useState(false);
+    const navigate = useNavigate();
 
-    // Busca os dados do membro ao carregar a página
+    // Fetch de dados com React Query
+    const { data: membro, isLoading } = useQuery({
+        queryKey: ['membro', id], // Chave da query
+        queryFn: async () => {
+            const response = await api.get(`/membros/${id}`);
+            return response.data;
+        },
+        enabled: !!id, // Executa apenas se o ID existir
+        onError: () => {
+            toast.error('Erro ao carregar os dados do membro.');
+        },
+    });
+
     useEffect(() => {
-        const fetchMembro = async () => {
-            try {
-                const response = await api.get(`/membros/${id}`);
-                const membro = response.data.membro; // Acessa o objeto membro dentro da resposta
-
-                // Preenche o formulário com os dados do membro
-                setValue('nome', membro.nome);
-                setValue('email', membro.email);
-                setValue('telefone', membro.telefone);
-                setValue('dataNascimento', membro.dataNascimento?.split('T')[0]); // Formata a data
-                setValue('projeto', membro.projeto);
-                setValue('batizado', membro.batizado);
-                setValue('dataBatismo', membro.dataBatismo?.split('T')[0]); // Formata a data
-                setValue('tipoMembro', membro.tipoMembro);
-
-                // Verifica se o endereço existe antes de preencher
-                if (membro.endereco) {
-                    setValue('endereco.cep', membro.endereco.cep);
-                    setValue('endereco.rua', membro.endereco.rua);
-                    setValue('endereco.numero', membro.endereco.numero);
-                    setValue('endereco.bairro', membro.endereco.bairro);
-                    setValue('endereco.cidade', membro.endereco.cidade);
-                    setValue('endereco.estado', membro.endereco.estado);
-                    setValue('endereco.complemento', membro.endereco.complemento);
-                }
-            } catch (error) {
-                console.error('Erro ao buscar dados do membro:', error);
-                toast.error('Erro ao carregar dados do membro.');
-            }
-        };
-
-        fetchMembro();
-    }, [id, setValue]);
-
-    const onSubmit = async (data) => {
-        setIsLoading(true);
-        try {
-            await api.put(`/membros/${id}`, data); // Atualiza o membro
-            toast.success('Cadastro atualizado com sucesso!');
-        } catch (error) {
-            console.error('Erro ao enviar os dados:', error);
-            if (error.response && error.response.status === 400 && error.response.data.message === 'Email já está em uso') {
-                toast.error('Email já está em uso. Por favor, use outro email.');
-            }
-            toast.error('Ocorreu um erro ao enviar os dados. Tente novamente.');
-        } finally {
-            setIsLoading(false);
+        if (membro) {
+            reset({
+                ...membro,
+                dataNascimento: membro.dataNascimento ? membro.dataNascimento.split('T')[0] : '',
+                dataBatismo: membro.dataBatismo ? membro.dataBatismo.split('T')[0] : '',
+            });
         }
+    }, [membro, reset]); // Executa sempre que `membro` for atualizado
+
+
+    // Mutação para atualização
+    const mutation = useMutation({
+        mutationFn: (data) => api.put(`/membros/${id}`, data),
+        onSuccess: () => {
+            toast.success('Cadastro atualizado com sucesso!');
+            queryClient.invalidateQueries(['membro', id]);
+        },
+        onError: (error) => {
+            if (error.response?.status === 400 && error.response?.data?.message === 'Email já está em uso') {
+                toast.error('Email já está em uso. Escolha outro.');
+            } else {
+                toast.error('Erro ao atualizar o cadastro.');
+            }
+        },
+    });
+
+    const onSubmit = (data) => {
+        mutation.mutate(data);
+        navigate('/dashboard/membros');
     };
+
 
     const handleCepBlur = async (e) => {
         const cep = e.target.value.replace(/\D/g, '');
@@ -395,6 +377,7 @@ function EditarCadastro() {
 
                     <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4">
                         <button
+                            onClick={() => navigate('/dashboard/membros')}
                             type="button"
                             className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         >
