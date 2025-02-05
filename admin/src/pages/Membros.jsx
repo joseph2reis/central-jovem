@@ -7,6 +7,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import html2pdf from 'html2pdf.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import Loading from '../components/Loading';
+import Error from '../components/ErrorCarregamento';
 
 function Membros() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,7 +35,7 @@ function Membros() {
     queryKey: ['membros'], // Query Key única para esta requisição
     queryFn: fetchMembros, // Função que faz a requisição
     staleTime: 1000 * 60 * 5, // Dados ficam "frescos" por 5 minutos
-    select: (data) => data.sort((a, b) => a.nome.localeCompare(b.nome)), // Ordena os membros por nome
+    select: (data) => data.sort((a, b) => a.nome.localeCompare(b.nome)),
 
   });
 
@@ -112,12 +114,12 @@ function Membros() {
 
   // Exibe um indicador de carregamento
   if (isLoading) {
-    return <div className="text-center py-8">Carregando...</div>;
+    return <Loading />
   }
 
   // Exibe uma mensagem de erro
   if (isError) {
-    return <div className="text-center py-8">Erro: {error.message}</div>;
+    return <Error error={error.message} />;
   }
 
   return (

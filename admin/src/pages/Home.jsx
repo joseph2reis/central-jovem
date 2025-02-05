@@ -10,6 +10,8 @@ import {
   FaUserCheck // Ícone para Discípulo
 } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Loading from '../components/Loading';
+import Error from '../components/ErrorCarregamento';
 
 // Componente de Filtro
 const FilterSelect = ({ label, name, value, options, onChange }) => (
@@ -139,6 +141,8 @@ function Home() {
   );
 
   useEffect(() => {
+
+
     const fetchData = async () => {
       try {
         const response = await api.get('/membros');
@@ -150,15 +154,16 @@ function Home() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
   if (loading) {
-    return <p className="absolute right-0 left-0  top-[50%] -translate-y-[50%] text-center py-8">Carregando...</p>;
+    return <Loading />
   }
 
   if (error) {
-    return <p className="text-center py-8 text-red-500">{error}</p>;
+    return <Error />
   }
 
   return (

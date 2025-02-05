@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FaCalendarAlt, FaCheck, FaTimes, FaFilter, FaSearch } from 'react-icons/fa';
 import api from '../service/api'; // Importe o serviço de API
+import Loading from '../components/Loading';
+import Error from '../components/ErrorCarregamento';
 
 function Frequencia() {
   const [selectedDate, setSelectedDate] = useState('');
@@ -128,11 +130,11 @@ function Frequencia() {
   };
 
   if (loading) {
-    return <p className="text-center py-8">Carregando...</p>;
+    return <Loading />;
   }
 
   if (error) {
-    return <p className="text-center py-8 text-red-500">{error}</p>;
+    return <Error error={error} />;
   }
 
   return (

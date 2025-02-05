@@ -4,6 +4,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../service/api';
+import Loading from '../components/Loading';
+import Error from '../components/ErrorCarregamento';
 
 function MarcarPresenca() {
   const [filtroJovem, setFiltroJovem] = useState('todos');
@@ -113,8 +115,8 @@ function MarcarPresenca() {
   const hoje = new Date();
   const diaAtual = diasSemana[hoje.getDay()];
 
-  if (isLoading) return <p>Carregando...</p>;
-  if (isError) return <p>Erro ao carregar dados.</p>;
+  if (isLoading) return <Loading />;
+  if (isError) return <Error error={'Erro ao carregar membros e presenças.'} />;
 
   return (
     <div className="p-4">

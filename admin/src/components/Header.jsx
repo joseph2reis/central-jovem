@@ -1,8 +1,8 @@
 import { FaBars } from 'react-icons/fa';
 
-function Header({ toggleMobileMenu, isSidebarOpen, isMobileMenuOpen }) {
+function Header({ toggleMobileMenu, isSidebarOpen }) {
   return (
-    <header className={`overflow-auto transition-all duration-300  ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} bg-white shadow-md flex items-center justify-between px-6 z-10`}>
+    <header className={`overflow-auto transition-all duration-300 py-2  ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'} bg-white shadow-md flex items-center justify-between px-6 z-10`}>
       <div className="flex items-center gap-2">
         <span className="text-lg font-bold text-blue-900">Central FJU</span>
       </div>
