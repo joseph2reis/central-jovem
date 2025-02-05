@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query'; // Importe useQuery
 import api from '../service/api';
 import {
   FaUsers,
@@ -34,9 +35,6 @@ const FilterSelect = ({ label, name, value, options, onChange }) => (
 
 function Home() {
   const [showFilters, setShowFilters] = useState(false);
-  const [membros, setMembros] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     projeto: '',
     batizado: '',
@@ -45,8 +43,18 @@ function Home() {
     discipulo: ''
   });
 
+  // Use useQuery para buscar os dados dos membros
+  const { data: membros, isLoading, error } = useQuery({
+    queryKey: ['membros'],
+    queryFn: async () => {
+      const response = await api.get('/membros');
+      return response.data;
+    }
+  });
+
+
   const filterMembros = useCallback(() => {
-    return membros.filter((membro) => {
+    return membros?.filter((membro) => {
       // Filtro por projeto
       if (filters.projeto && membro.projeto !== filters.projeto) return false;
 
@@ -70,7 +78,7 @@ function Home() {
   }, [membros, filters]);
 
   const stats = useMemo(() => {
-    const membrosFiltrados = filterMembros();
+    const membrosFiltrados = filterMembros() || [];
 
     return {
       totalMembros: membrosFiltrados.length,
@@ -89,7 +97,7 @@ function Home() {
   }, [membros, filters, filterMembros]);
 
   const dadosGrafico = useMemo(() => {
-    const membrosFiltrados = filterMembros();
+    const membrosFiltrados = filterMembros() || [];
 
     // Agrupa os membros por projeto
     const projetos = [
@@ -140,30 +148,12 @@ function Home() {
     </div>
   );
 
-  useEffect(() => {
-
-
-    const fetchData = async () => {
-      try {
-        const response = await api.get('/membros');
-        setMembros(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar dados:', error);
-        setError('Erro ao carregar dados. Tente novamente mais tarde.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <Loading />
+  if (isLoading) {
+    return <Loading />;
   }
 
   if (error) {
-    return <Error />
+    return <Error />;
   }
 
   return (

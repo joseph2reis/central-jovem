@@ -3,6 +3,8 @@ import { FaCalendarAlt, FaCheck, FaTimes, FaFilter, FaSearch } from 'react-icons
 import api from '../service/api'; // Importe o serviço de API
 import Loading from '../components/Loading';
 import Error from '../components/ErrorCarregamento';
+import { useQuery } from '@tanstack/react-query';
+
 
 function Frequencia() {
   const [selectedDate, setSelectedDate] = useState('');
@@ -12,9 +14,7 @@ function Frequencia() {
     projeto: '',
     semana: ''
   });
-  const [frequencias, setFrequencias] = useState([]); // Estado para armazenar as frequências reais
-  const [loading, setLoading] = useState(true); // Estado para controlar o carregamento
-  const [error, setError] = useState(null); // Estado para armazenar erros
+
 
   // Função para capitalizar nomes
   function capitalizarNomes(nome) {
@@ -25,37 +25,29 @@ function Frequencia() {
   }
 
   // Busca as frequências ao carregar o componente
-  useEffect(() => {
-    const fetchFrequencias = async () => {
-      try {
-        const response = await api.get('/presencas');
-
-        const formattedData = response.data.map((presenca) => {
-          const presencasPorDia = {};
-          presenca.presencas.forEach((p) => {
-            const diaSemana = new Date(p.data).toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
-            presencasPorDia[diaSemana] = p.presente;
-          });
-
-          return {
-            id: presenca.idMembro,
-            nome: presenca.nomeMembro,
-            projeto: 'Projeto do Membro', // Substitua por um campo real do seu modelo
-            presencas: presencasPorDia
-          };
+  const { data: frequencias, isLoading, isError } = useQuery({
+    queryKey: ['presencas'],
+    queryFn: async () => {
+      const response = await api.get('/presencas');
+      return response.data.map((presenca) => {
+        const presencasPorDia = {};
+        presenca.presencas.forEach((p) => {
+          const diaSemana = new Date(p.data)
+            .toLocaleDateString('pt-BR', { weekday: 'long' })
+            .toLowerCase();
+          presencasPorDia[diaSemana] = p.presente;
         });
 
-        setFrequencias(formattedData);
-      } catch (error) {
-        console.error('Erro ao buscar frequências:', error);
-        setError('Erro ao carregar dados.');
-      } finally {
-        setLoading(false);
-      }
-    };
+        return {
+          id: presenca.idMembro,
+          nome: presenca.nomeMembro,
+          projeto: 'Projeto do Membro', // Substituir por campo real
+          presencas: presencasPorDia
+        };
+      });
+    }
+  });
 
-    fetchFrequencias();
-  }, []);
 
   const diasSemana = [
     'domingo',
@@ -67,15 +59,6 @@ function Frequencia() {
     'sábado'
   ];
 
-
-  // Função normalizeText atualizada
-  const normalizeText = (text) => {
-    return text
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace('sábado', 'sabado'); // Forçar padronização
-  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -95,15 +78,15 @@ function Frequencia() {
     let totalPresencas = 0;
     let totalDias = 0;
 
-    frequencias.forEach(membro => {
-      const presencas = Object.values(membro.presencas);
+    (frequencias ?? []).forEach(membro => {  // Garante que frequencias nunca seja undefined
+      const presencas = Object.values(membro.presencas ?? {}); // Garante que presencas nunca seja undefined
       totalPresencas += presencas.filter(p => p).length;
       totalDias += presencas.length;
     });
 
-    const percentualPresenca = (totalPresencas / totalDias) * 100 || 0;
+    const percentualPresenca = (totalPresencas / (totalDias || 1)) * 100; // Evita divisão por zero
     const percentualFalta = 100 - percentualPresenca;
-    const mediaFrequencia = totalPresencas / frequencias.length || 0;
+    const mediaFrequencia = totalPresencas / (frequencias?.length || 1);
 
     return {
       percentualPresenca: percentualPresenca.toFixed(1),
@@ -111,6 +94,7 @@ function Frequencia() {
       mediaFrequencia: mediaFrequencia.toFixed(1)
     };
   };
+
 
   const estatisticas = calcularEstatisticas();
 
@@ -129,12 +113,12 @@ function Frequencia() {
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  if (error) {
-    return <Error error={error} />;
+  if (isError) {
+    return <Error error={isError} />;
   }
 
   return (
