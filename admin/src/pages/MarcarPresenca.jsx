@@ -110,7 +110,7 @@ function MarcarPresenca() {
   const membrosAusentes = membrosFiltrados.filter((membro) => !membro.presente);
 
   // Definir o dia atual
-  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const diasSemana = ['Domingo', 'Algo a Mais', 'Terça', 'Quarta', 'Terapia do Amor', 'Sexta', 'Encontro Jovem'];
   const hoje = new Date();
   const diaAtual = diasSemana[hoje.getDay()];
 
@@ -119,7 +119,7 @@ function MarcarPresenca() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Marcar Presença - {diaAtual}</h1>
+      <h1 className="text-2xl font-bold mb-4">{diaAtual}</h1>
 
       {/* Filtro de Frente Jovem */}
       <div className="mb-6">
@@ -140,7 +140,7 @@ function MarcarPresenca() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Coluna de Membros Presentes */}
         <div className="bg-white p-4 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4 text-green-600">Presentes</h2>
+          <h2 className="text-lg font-semibold mb-4 text-green-600">{membrosPresentes.length} Presentes</h2>
           <div className="space-y-2">
             {membrosPresentes.map((membro) => (
               <div
@@ -165,7 +165,7 @@ function MarcarPresenca() {
 
         {/* Coluna de Membros Ausentes */}
         <div className="bg-white p-4 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4 text-red-600">Ausentes</h2>
+          <h2 className="text-lg font-semibold mb-4 text-red-600">{membrosAusentes.length} Ausentes</h2>
           <div className="space-y-2">
             {membrosAusentes.map((membro) => (
               <div
