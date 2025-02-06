@@ -43,7 +43,7 @@ const MobileMenu = ({ isOpen, onClose, handleLogout }) => {
                 {/* Logo e Botão de Fechar */}
                 <div className="flex items-center justify-between p-4 border-b border-blue-700/50">
                     <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold">Central FJU</span>
+                        <span className="text-xl font-bold">Central Jovem</span>
                     </div>
                     <button
                         onClick={onClose}

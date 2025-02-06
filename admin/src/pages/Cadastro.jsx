@@ -21,12 +21,12 @@ const schema = yup.object().shape({
     .test('tem-sobrenome', 'O nome deve conter um sobrenome', (value) => {
       return value && value.trim().includes(' ');
     }),
-  email: yup.string().email('Email inválido').required('Email é obrigatório'),
+  email: yup.string().email('Email inválido'),
   telefone: yup
     .string()
     .matches(/^\(\d{2}\) \d{5}-\d{4}$/, 'Telefone inválido')
     .required('Telefone é obrigatório'),
-  dataNascimento: yup.string().required('Data de nascimento é obrigatória'),
+  dataNascimento: yup.string(),
   projeto: yup.string().required('Projeto é obrigatório'),
   batizado: yup.boolean(),
   dataBatismo: yup.string(),
@@ -35,12 +35,12 @@ const schema = yup.object().shape({
     .required('Tipo de membro é obrigatório')
     .oneOf(['obreiro', 'jovem', 'discipulo'], 'Selecione um tipo válido'),
   endereco: yup.object().shape({
-    cep: yup.string().required('CEP é obrigatório'),
-    rua: yup.string().required('Rua é obrigatória').trim(),
-    numero: yup.string().required('Número é obrigatório'),
-    bairro: yup.string().required('Bairro é obrigatório'),
-    cidade: yup.string().required('Cidade é obrigatória'),
-    estado: yup.string().required('Estado é obrigatório'),
+    cep: yup.string(),
+    rua: yup.string(),
+    numero: yup.string(),
+    bairro: yup.string(),
+    cidade: yup.string(),
+    estado: yup.string(),
     complemento: yup.string(),
   }),
 });

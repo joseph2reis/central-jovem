@@ -169,7 +169,7 @@ function Home() {
       </div>
 
       {/* Filtros e Tabela */}
-      <div className="bg-white rounded-lg shadow-md hidden sm:block">
+      <div className="bg-white rounded-lg shadow-md">
         <div className="p-4 sm:p-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-xl font-bold text-gray-800">Visão Geral dos Membros</h2>
@@ -254,7 +254,7 @@ function Home() {
         <div className="p-4 sm:p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Distribuição de Membros por Projeto</h2>
           <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={0} minWidth={0} >
               <BarChart
                 data={dadosGrafico}
                 margin={{

@@ -42,7 +42,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, handleLogout }) => {
               ${isSidebarOpen ? 'w-full' : 'w-0'}
             `}
                     >
-                        Central FJU
+                        Central Jovem
                     </span>
                 </div>
                 <button

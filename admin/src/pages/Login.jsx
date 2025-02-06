@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { FaUser } from 'react-icons/fa';
 import { RiLockPasswordFill } from 'react-icons/ri';
-import logo from '../assets/universal.png';
 import { useNavigate } from 'react-router-dom';
 import api from '../service/api';
 import { useAuth } from '../context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { IoEyeOutline } from "react-icons/io5";
+import { IoEyeOffOutline } from "react-icons/io5";
 
 export function Login() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const [visible, setVisible] = useState(false);
 
 
   const handleSubmit = async (e) => {
@@ -39,8 +41,7 @@ export function Login() {
       <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <img src={logo} alt="Logo FJU" className="mx-auto h-24 w-auto" />
-          <h1 className="text-3xl font-bold text-gray-800">Central FJU Tapanã</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Central Jovem</h1>
           <p className="text-gray-500">Faça login para acessar o sistema</p>
         </div>
 
@@ -62,13 +63,17 @@ export function Login() {
             <div className="relative">
               <RiLockPasswordFill className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
               <input
-                type="password"
+                type={visible ? "text" : "password"}
                 placeholder="Sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
+
+              {visible ? <IoEyeOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg cursor-pointer" onClick={() => setVisible(!visible)} /> :
+                <IoEyeOffOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg cursor-pointer" onClick={() => setVisible(!visible)} />}
+
             </div>
           </div>
 

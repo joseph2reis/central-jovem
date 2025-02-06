@@ -41,7 +41,6 @@ function Frequencia() {
         return {
           id: presenca.idMembro,
           nome: presenca.nomeMembro,
-          projeto: 'Projeto do Membro', // Substituir por campo real
           presencas: presencasPorDia
         };
       });
@@ -231,6 +230,7 @@ function Frequencia() {
 
                     {diasSemana.map(dia => {
                       const status = getPresencaStatus(membro.presencas[dia]);
+                      
                       return (
                         <td key={dia} className="px-3 py-4 whitespace-nowrap text-center">
                           <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full 

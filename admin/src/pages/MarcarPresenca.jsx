@@ -51,6 +51,7 @@ function MarcarPresenca() {
   const { data: membros, isLoading, isError } = useQuery({
     queryKey: ['membrosEPresencas'], // Chave da query
     queryFn: fetchMembrosEPresencas, // Função de busca
+    select: (data) => data.sort((a, b) => a.nome.localeCompare(b.nome)),
     onError: () => toast.error('Erro ao carregar membros e presenças.'), // Tratamento de erro
   });
 
@@ -62,15 +63,6 @@ function MarcarPresenca() {
       .join(' '); // Junta tudo de volta
   }
 
-  // Função para marcar presença localmente
-  const marcarPresenca = (id) => {
-    const membrosAtualizados = membros.map((membro) =>
-      membro._id === id ? { ...membro, presente: !membro.presente } : membro
-    );
-    queryClient.setQueryData(['membrosEPresencas'], membrosAtualizados);
-    toast.success('Presença atualizada com sucesso!');
-  };
-
   // Função para salvar presenças no backend
   const salvarPresencas = async (presencasSalvas) => {
     const response = await api.put('/presencas', presencasSalvas);
@@ -81,21 +73,28 @@ function MarcarPresenca() {
   const { mutate: salvarPresencasMutation } = useMutation({
     mutationFn: salvarPresencas, // Função de mutação
     onSuccess: () => {
-      toast.success('Presenças salvas com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['membrosEPresencas'] }); // Refetch dos dados
     },
     onError: () => toast.error('Erro ao salvar presenças.'),
   });
 
-  // Função para preparar e enviar as presenças
-  const handleSalvarPresencas = () => {
-    const presencasSalvas = membros.map((membro) => ({
+  // Função para marcar presença localmente e no backend
+  const marcarPresenca = (id) => {
+    const membrosAtualizados = membros.map((membro) =>
+      membro._id === id ? { ...membro, presente: !membro.presente } : membro
+    );
+    queryClient.setQueryData(['membrosEPresencas'], membrosAtualizados);
+
+    // Preparar e enviar as presenças atualizadas
+    const presencasSalvas = membrosAtualizados.map((membro) => ({
       idMembro: membro._id,
       nomeMembro: membro.nome,
       data: new Date(),
       presente: membro.presente,
     }));
     salvarPresencasMutation(presencasSalvas);
+
+    toast.success('Presença atualizada com sucesso!');
   };
 
   // Filtrar membros com base no filtro de Frente Jovem
@@ -190,15 +189,6 @@ function MarcarPresenca() {
         </div>
       </div>
 
-      {/* Botão para Salvar Presenças */}
-      <div className="mt-6">
-        <button
-          onClick={handleSalvarPresencas}
-          className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-        >
-          Salvar Presenças
-        </button>
-      </div>
       {/* Toast Container para feedback visual */}
       <ToastContainer />
     </div>

@@ -30,7 +30,7 @@
 
 .loading {
     display: flex;
-    font-size: 4rem;
+    font-size: 2rem;
     font-weight: bold;
     font-family: Arial, sans-serif;
     color: #0e005e;
@@ -63,8 +63,7 @@
     animation: pulse 1.5s infinite ease-in-out;
 }
 
-.carregando {
-    font-size: 1rem;
-    color: #000000;
-    font-family: Arial, sans-serif;
-}
+input::-ms-reveal {
+    display: none;
+  }
+  
