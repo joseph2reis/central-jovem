@@ -47,6 +47,9 @@ function MarcarPresenca() {
     });
   };
 
+  const dataNormalizada = new Date();
+  dataNormalizada.setHours(0, 0, 0, 0);
+
   // Usar useQuery para buscar membros e presenças
   const { data: membros, isLoading, isError } = useQuery({
     queryKey: ['membrosEPresencas'], // Chave da query
@@ -67,7 +70,6 @@ function MarcarPresenca() {
   const salvarPresencas = async (presencasSalvas) => {
     const response = await api.put('/presencas', presencasSalvas);
     return response.data;
-
   };
 
   // Usar useMutation para salvar presenças
