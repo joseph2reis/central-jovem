@@ -21,6 +21,8 @@ function MarcarPresenca() {
     const dadosMembros = responseMembros.data;
     const presencasDoDia = responsePresencas.data;
 
+    console.log(dadosMembros, presencasDoDia)
+
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
