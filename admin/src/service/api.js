@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL:  'https://central-jovem-production.up.railway.app/api',
-  timeout: 10000,
+  baseURL: 'https://central-jovem-production.up.railway.app/api',
+  timeout: 1000,
   headers: {
     'Content-Type': 'application/json'
   }
