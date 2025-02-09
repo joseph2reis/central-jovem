@@ -39,7 +39,6 @@ export const salvarPresencas = async (req, res) => {
 
         res.status(200).json({ message: 'Presenças salvas com sucesso!' });
     } catch (error) {
-        console.error('Erro ao salvar presenças:', error);
         res.status(500).json({ message: 'Erro ao salvar presenças.' });
     }
 };

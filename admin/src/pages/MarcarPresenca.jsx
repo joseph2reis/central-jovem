@@ -21,8 +21,6 @@ function MarcarPresenca() {
     const dadosMembros = responseMembros.data;
     const presencasDoDia = responsePresencas.data;
 
-    console.log(dadosMembros, presencasDoDia)
-
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
@@ -69,6 +67,7 @@ function MarcarPresenca() {
   const salvarPresencas = async (presencasSalvas) => {
     const response = await api.put('/presencas', presencasSalvas);
     return response.data;
+
   };
 
   // Usar useMutation para salvar presenças
@@ -87,13 +86,13 @@ function MarcarPresenca() {
     );
     queryClient.setQueryData(['membrosEPresencas'], membrosAtualizados);
 
-    // Preparar e enviar as presenças atualizadas
     const presencasSalvas = membrosAtualizados.map((membro) => ({
       idMembro: membro._id,
       nomeMembro: membro.nome,
-      data: new Date(),
+      data: dataNormalizada,
       presente: membro.presente,
     }));
+
     salvarPresencasMutation(presencasSalvas);
 
     toast.success('Presença atualizada com sucesso!');
