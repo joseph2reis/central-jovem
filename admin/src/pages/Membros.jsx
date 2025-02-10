@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { FaEdit, FaTrash, FaSearch, FaMapMarkerAlt, FaDownload } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaSearch, FaMapMarkerAlt, FaDownload, FaPlus } from 'react-icons/fa';
 import { FaRegFilePdf } from "react-icons/fa6";
 import api from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -22,8 +22,7 @@ function Membros() {
 
   // Função para buscar os membros
   const fetchMembros = async () => {
-    // await new Promise((resolve) => setTimeout(resolve, 2000));
-    const response = await api.get('/membros'); // Faz a requisição ao backend
+    const response = await api.get('/membros');
     if (response.status !== 200) {
       throw new Error('Erro ao buscar membros');
     }
@@ -32,12 +31,16 @@ function Membros() {
 
   // Usa o React Query para buscar os membros
   const { data: membros, isLoading, isError, error } = useQuery({
-    queryKey: ['membros'], // Query Key única para esta requisição
-    queryFn: fetchMembros, // Função que faz a requisição
-    staleTime: 1000 * 60 * 5, // Dados ficam "frescos" por 5 minutos
+    queryKey: ['membros'],
+    queryFn: fetchMembros,
+    staleTime: 1000 * 60 * 5,
     select: (data) => data.sort((a, b) => a.nome.localeCompare(b.nome)),
-
   });
+
+  // Função para redirecionar para a página de cadastro de membros
+  const handleCadastrarMembro = () => {
+    navigate('/dashboard/cadastro');
+  };
 
   // Função para gerar PDF
   const handleDownloadPDF = () => {
@@ -128,15 +131,23 @@ function Membros() {
       <div className="p-4 sm:p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Membros Cadastrados</h2>
-          <div className="w-full sm:w-auto relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar membro..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex items-center gap-4">
+            <div className="w-full sm:w-auto relative">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar membro..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              onClick={handleCadastrarMembro}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <FaPlus /> Cadastrar Membro
+            </button>
           </div>
         </div>
       </div>
@@ -144,123 +155,130 @@ function Membros() {
       {/* Tabela de membros */}
       <div className="overflow-x-auto">
         <div className="inline-block min-w-full align-middle">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nome
-                </th>
-                <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fone
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Projeto
-                </th>
-                <th scope="col" className="hidden sm:table-cell px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Batizado
-                </th>
-                <th scope="col" className="hidden sm:table-cell px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Frente Jovem
-                </th>
-                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Endereço
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMembros.map((membro) => (
-                <React.Fragment key={membro._id}>
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col sm:hidden mb-2">
-                        <span className="text-sm font-medium text-gray-900">{capitalizarNomes(membro.nome)}</span>
-                        <span className="text-sm text-gray-500">{membro.telefone}</span>
-                        <div className="flex gap-2 mt-1">
-                          {membro.batizado && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Batizado
-                            </span>
-                          )}
-                          {membro.tipoMembro && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {membro.tipoMembro}
-                            </span>
-                          )}
+          {filteredMembros.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              Nenhum membro cadastrado. Clique em "Cadastrar Membro" para adicionar um novo membro.
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nome
+                  </th>
+                  <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fone
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Projeto
+                  </th>
+                  <th scope="col" className="hidden sm:table-cell px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Batizado
+                  </th>
+                  <th scope="col" className="hidden sm:table-cell px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Frente Jovem
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Endereço
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMembros.map((membro) => (
+                  <React.Fragment key={membro._id}>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex flex-col sm:hidden mb-2">
+                          <span className="text-sm font-medium text-gray-900">{capitalizarNomes(membro.nome)}</span>
+                          <span className="text-sm text-gray-500">{membro.telefone}</span>
+                          <div className="flex gap-2 mt-1">
+                            {membro.batizado && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Batizado
+                              </span>
+                            )}
+                            {membro.tipoMembro && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {membro.tipoMembro}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <span className="hidden sm:inline text-sm font-medium text-gray-900">{capitalizarNomes(membro.nome)}</span>
-                    </td>
-                    <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membro.telefone}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membro.projeto}
-                    </td>
-                    <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${membro.batizado ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {membro.batizado ? 'Sim' : 'Não'}
-                      </span>
-                    </td>
-                    <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${membro.tipoMembro ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {membro.tipoMembro}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => setShowEndereco(showEndereco === membro._id ? null : membro._id)}
-                        className="text-gray-600 hover:text-blue-600 transition-colors"
-                      >
-                        <FaMapMarkerAlt className="text-lg" />
-                      </button>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium ">
-                      <button
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                        onClick={() => handleEditarMembro(membro._id)}
-                      >
-                        <FaEdit className="text-lg" />
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-800 mx-2 transition-colors"
-                        onClick={() => handleAbrirModalExclusao(membro._id)}
-                      >
-                        <FaTrash className="text-lg" />
-                      </button>
-                      <button
-                        className="text-green-600 hover:text-green-800 transition-colors"
-                        onClick={() => handleExibirFicha(membro._id)}
-                      >
-                        <FaRegFilePdf className="text-lg" />
-                      </button>
-                    </td>
-                  </tr>
-                  {showEndereco === membro._id && (
-                    <tr className="bg-gray-50">
-                      <td colSpan="7" className="px-4 py-4">
-                        <div className="text-sm text-gray-700">
-                          <p className="font-medium mb-1">Endereço completo:</p>
-                          <p>
-                            {membro.endereco.rua}, {membro.endereco.numero} - {membro.endereco.bairro}
-                          </p>
-                          <p>
-                            {membro.endereco.cidade} - {membro.endereco.estado}
-                          </p>
-                        </div>
+                        <span className="hidden sm:inline text-sm font-medium text-gray-900">{capitalizarNomes(membro.nome)}</span>
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {membro.telefone}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {membro.projeto}
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${membro.batizado ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {membro.batizado ? 'Sim' : 'Não'}
+                        </span>
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${membro.tipoMembro ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {membro.tipoMembro}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => setShowEndereco(showEndereco === membro._id ? null : membro._id)}
+                          className="text-gray-600 hover:text-blue-600 transition-colors"
+                        >
+                          <FaMapMarkerAlt className="text-lg" />
+                        </button>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium ">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                          onClick={() => handleEditarMembro(membro._id)}
+                        >
+                          <FaEdit className="text-lg" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-800 mx-2 transition-colors"
+                          onClick={() => handleAbrirModalExclusao(membro._id)}
+                        >
+                          <FaTrash className="text-lg" />
+                        </button>
+                        <button
+                          className="text-green-600 hover:text-green-800 transition-colors"
+                          onClick={() => handleExibirFicha(membro._id)}
+                        >
+                          <FaRegFilePdf className="text-lg" />
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+                    {showEndereco === membro._id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan="7" className="px-4 py-4">
+                          <div className="text-sm text-gray-700">
+                            <p className="font-medium mb-1">Endereço completo:</p>
+                            <p>
+                              {membro.endereco.rua}, {membro.endereco.numero} - {membro.endereco.bairro}
+                            </p>
+                            <p>
+                              {membro.endereco.cidade} - {membro.endereco.estado}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
+
 
       {/* Modal da Ficha */}
       {fichaMembroId && (

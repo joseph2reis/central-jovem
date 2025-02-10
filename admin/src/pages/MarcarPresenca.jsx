@@ -47,14 +47,12 @@ function MarcarPresenca() {
     });
   };
 
-  const dataNormalizada = new Date();
-  dataNormalizada.setHours(0, 0, 0, 0);
+
 
   // Usar useQuery para buscar membros e presenças
   const { data: membros, isLoading, isError } = useQuery({
     queryKey: ['membrosEPresencas'], // Chave da query
     queryFn: fetchMembrosEPresencas, // Função de busca
-    select: (data) => data.sort((a, b) => a.nome.localeCompare(b.nome)),
     onError: () => toast.error('Erro ao carregar membros e presenças.'), // Tratamento de erro
   });
 
@@ -91,7 +89,7 @@ function MarcarPresenca() {
     const presencasSalvas = membrosAtualizados.map((membro) => ({
       idMembro: membro._id,
       nomeMembro: membro.nome,
-      data: dataNormalizada,
+      data: new Date(),
       presente: membro.presente,
     }));
 
